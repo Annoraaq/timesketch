@@ -36,7 +36,7 @@ limitations under the License.
       </v-btn>
       <span class="float-right mr-2">
         <v-progress-circular
-          v-if="!analyzerResultsReady || activeAnalyzerQueue.length > 0"
+          v-if="!analyzerResultsReady || activeAnalyzerSessionQueue.length > 0"
           :size="25"
           :width="2"
           indeterminate
@@ -106,7 +106,7 @@ export default {
       analyzerResultsReady: false,
       analyzerResults: [],
       analyzerResultsData: {},
-      activeAnalyzerQueue: [],
+      activeAnalyzerSessionQueue: [],
     }
   },
   computed: {
@@ -131,7 +131,7 @@ export default {
       return counter
     },
     activeAnalyzerDisplayCount() {
-      return this.activeAnalyzerQueue.length > 0 ? this.activeAnalyzerQueue.length : '';
+      return this.activeAnalyzerSessionQueue.length > 0 ? this.activeAnalyzerSessionQueue.length : '';
     }
   },
   methods: {
@@ -147,6 +147,7 @@ export default {
     },
     updateAnalyzerResultsData(analyzerSessions) {
       let perAnalyzer = this.analyzerResultsData
+      const activeAnalyzers = new Set();
       try {
         for (const session of analyzerSessions) {
           if (!perAnalyzer[session.analyzer_name]) {
@@ -185,12 +186,13 @@ export default {
 
           if (session.status[0].status === 'PENDING' || session.status[0].status === 'STARTED') {
             // if the session is PENDING or STARTED, add the session to the queue (if not there yet)
-            if (this.activeAnalyzerQueue.indexOf(session.analysissession_id) === -1) this.activeAnalyzerQueue.push(session.analysissession_id)
+            if (this.activeAnalyzerSessionQueue.indexOf(session.analysissession_id) === -1) this.activeAnalyzerSessionQueue.push(session.analysissession_id)
+            activeAnalyzers.add(session.analyzer_name);
           }
           if (session.status[0].status === 'DONE' || session.status[0].status === 'ERROR') {
             // if the session is DONE or ERROR, remove it from the queue
-            const index = this.activeAnalyzerQueue.indexOf(session.analysissession_id)
-            if (index > -1) this.activeAnalyzerQueue.splice(index, 1)
+            const index = this.activeAnalyzerSessionQueue.indexOf(session.analysissession_id)
+            if (index > -1) this.activeAnalyzerSessionQueue.splice(index, 1)
           }
         }
       } catch(e) {
@@ -199,6 +201,7 @@ export default {
 
       // for now sort the results in alphabetical order. In the future this will be sorted by verdict severity.
       this.analyzerResultsData = perAnalyzer
+      this.$store.dispatch('updateActiveAnalyzers', [...activeAnalyzers]);
       let sortedAnalyzerList = [...Object.entries(perAnalyzer).map(([analyzerName, data]) => ({analyzerName, data}))]
       sortedAnalyzerList.sort((a, b) => a.data.analyzerInfo.display_name.localeCompare(b.data.analyzerInfo.display_name))
       this.analyzerResults = sortedAnalyzerList
@@ -209,13 +212,13 @@ export default {
       let activeSessions = response.data.objects[0]['sessions']
       if (activeSessions) {
         activeSessions.forEach(sessionId => {
-          if (this.activeAnalyzerQueue.indexOf(sessionId) === -1) this.activeAnalyzerQueue.push(sessionId)
+          if (this.activeAnalyzerSessionQueue.indexOf(sessionId) === -1) this.activeAnalyzerSessionQueue.push(sessionId)
         })
       }
     },
     async fetchAnalyzerSessionData() {
       let activeAnalyzerSessionData = []
-      for (const sessionId of this.activeAnalyzerQueue) {
+      for (const sessionId of this.activeAnalyzerSessionQueue) {
         const response = await ApiClient.getAnalyzerSession(this.sketch.id, sessionId)
         let analyzerSession = response.data.objects[0]
         if (!analyzerSession) continue
@@ -225,7 +228,7 @@ export default {
     },
     triggeredAnalyzerRuns: function (data) {
       data.forEach(sessionId => {
-        if (this.activeAnalyzerQueue.indexOf(sessionId) === -1) this.activeAnalyzerQueue.push(sessionId)
+        if (this.activeAnalyzerSessionQueue.indexOf(sessionId) === -1) this.activeAnalyzerSessionQueue.push(sessionId)
       })
     },
     filterByDisplayName(items, search) {
@@ -245,7 +248,7 @@ export default {
     this.interval = false
   },
   watch: {
-    activeAnalyzerQueue: function (sessionQueue) {
+    activeAnalyzerSessionQueue: function (sessionQueue) {
       if (sessionQueue.length > 0 && !this.interval) {
         this.interval = setInterval(function() {
           if (sessionQueue.length > 0) {
