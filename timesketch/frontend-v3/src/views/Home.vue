@@ -16,12 +16,10 @@ limitations under the License.
 <template>
   <div>
     <!-- Top horizontal toolbar -->
-    <v-toolbar flat color="transparent">
-      <v-avatar class="mt-2 ml-n3">
-        <router-link to="/">
-          <v-img src="@/assets/timesketch-color.png" max-height="25" max-width="25" contain></v-img>
-        </router-link>
-      </v-avatar>
+    <v-toolbar flat color="transparent" class="pl-3 pr-3">
+      <router-link to="/">
+        <v-img src="@/assets/timesketch-color.png" class="mx-2" height="25" width="25" contain></v-img>
+      </router-link>
       <span style="font-size: 1.2em">timesketch</span>
 
       <v-spacer></v-spacer>
@@ -75,13 +73,13 @@ limitations under the License.
 
     <!-- Main view -->
     <v-main class="notransition">
-      <v-container fluid pa-0>
-        <v-sheet class="pa-5" :color="$vuetify.theme.dark ? 'grey darken-4' : 'grey lighten-3'" min-height="200">
+      <v-container fluid class="pa-0">
+        <v-sheet class="pa-5" :color="$vuetify.theme.dark ? 'grey-darken-4' : 'grey-lighten-3'" min-height="200">
           <h2>Start new investigation</h2>
           <v-row no-gutters class="mt-5">
             <v-dialog v-model="createSketchDialog" width="500">
               <template v-slot:activator="{ on, attrs }">
-                <v-btn depressed small class="mr-5" color="primary" v-bind="attrs" v-on="on"> Blank sketch </v-btn>
+                <v-btn depressed variant="flat" size="small" class="mr-5" color="primary" v-bind="attrs" v-on="on"> Blank sketch </v-btn>
               </template>
               <v-card class="pa-4">
                 <h3>New sketch</h3>
