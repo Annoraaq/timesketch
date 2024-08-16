@@ -42,6 +42,22 @@ export default defineConfig({
     ],
   },
   server: {
-    port: 3000,
+    // See https://cli.vuejs.org/config/#devserver for more options
+    port: 5001,
+    host: true,
+    proxy: {
+      '^/api': {
+        autoRewrite: true,
+        target: 'http://localhost:5000/',
+      },
+      '^/dist': {
+        autoRewrite: true,
+        target: 'http://localhost:5000/',
+      },
+      '^/login|logout': {
+        autoRewrite: true,
+        target: 'http://localhost:5000/',
+      },
+    },
   },
 })
